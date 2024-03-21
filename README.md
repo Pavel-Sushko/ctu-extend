@@ -22,7 +22,7 @@ This script is designed to run through Tampermonkey, a popular userscript manage
 
 ### Greasyfork installation
 
-1. Navigate to the script's page on [Greasyfork](https://greasyfork.org/en/scripts/490426-ctu-grade-calculator).
+1. Navigate to the script's page on [Greasyfork](https://greasyfork.org/en/scripts/490426-ctu-extender).
 2. Click on the "Install this script" button.
 3. Tampermonkey should automatically detect the script and prompt you to install it.
 
