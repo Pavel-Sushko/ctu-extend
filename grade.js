@@ -1,68 +1,133 @@
-const gradeThresholds = [
-	{ grade: 'A', threshold: 94 },
-	{ grade: 'A-', threshold: 90 },
-	{ grade: 'B+', threshold: 86 },
-	{ grade: 'B', threshold: 83 },
-	{ grade: 'B-', threshold: 80 },
-	{ grade: 'C+', threshold: 76 },
-	{ grade: 'C', threshold: 73 },
-	{ grade: 'C-', threshold: 70 },
-	{ grade: 'D+', threshold: 65 },
-	{ grade: 'D', threshold: 60 },
-	{ grade: 'F', threshold: 0 },
-];
+// ==UserScript==
+// @name         CTU Grade Calculator
+// @namespace    http://tampermonkey.net/
+// @version      0.0.1
+// @description  Calculate the current absolute grade and points needed to get an A in CTU courses
+// @author       Pavel Sushko <github@psushko.com>
+// @license      MIT
+// @match        https://studentlogin.coloradotech.edu/
+// @icon         https://www.google.com/s2/favicons?sz=64&domain=coloradotech.edu
+// @grant        none
+// ==/UserScript==
 
-const getElement = (type, lookupString) => {
-	for (const e of document.querySelectorAll(`${type}`)) if (e.textContent.includes(lookupString)) return e;
-};
+(function () {
+	'use strict';
 
-const getPoints = (lookupString, child) => {
-	const span = getElement('span', lookupString);
+	const gradeThresholds = [
+		{ grade: 'A', threshold: 94 },
+		{ grade: 'A-', threshold: 90 },
+		{ grade: 'B+', threshold: 86 },
+		{ grade: 'B', threshold: 83 },
+		{ grade: 'B-', threshold: 80 },
+		{ grade: 'C+', threshold: 76 },
+		{ grade: 'C', threshold: 73 },
+		{ grade: 'C-', threshold: 70 },
+		{ grade: 'D+', threshold: 65 },
+		{ grade: 'D', threshold: 60 },
+		{ grade: 'F', threshold: 0 },
+	];
 
-	let spanText = child ? span.querySelector('span').innerText : span.nextElementSibling.innerText;
+	// #region Grade Calculations
 
-	return Number(spanText.includes('N/A') ? '0' : spanText);
-};
+	/**
+	 * Get the current absolute grade percentage
+	 *
+	 * @param {Number} earnedPoints
+	 * @param {Number} maxPoints
+	 * @returns {Number} The current absolute grade percentage
+	 */
+	const getPercentage = (earnedPoints, maxPoints) => (earnedPoints / maxPoints) * 100;
 
-const getPercentage = (earnedPoints, maxPoints) => (earnedPoints / maxPoints) * 100;
+	/**
+	 * Get the letter grade based on the percentage
+	 *
+	 * @param {Number} percentage
+	 * @returns {String} The letter grade
+	 */
+	const getLetterGrade = (percentage) =>
+		gradeThresholds.find(({ threshold }) => percentage >= threshold)?.grade || 'Grade not found';
 
-const getLetterGrade = (percentage) => {
-	for (const threshold of gradeThresholds) if (percentage >= threshold.threshold) return threshold.grade;
-};
+	/**
+	 * Get the points needed to get an A
+	 *
+	 * @param {Number} earnedPoints
+	 * @param {Number} maxPoints
+	 * @returns {Number} The points needed to get an A
+	 */
+	const getPointsToA = (earnedPoints, maxPoints) =>
+		Math.max(0, maxPoints * (gradeThresholds[0].threshold / 100) - earnedPoints);
 
-const getPointsToA = (earnedPoints, maxPoints) => {
-	const pointsToA = maxPoints * (gradeThresholds[0].threshold / 100) - earnedPoints;
+	// #endregion
 
-	return pointsToA < 0 ? 0 : pointsToA;
-};
+	// #region DOM Manipulation
 
-const appendGrade = (earnedPoints, maxPoints) => {
-	const grade = getLetterGrade(getPercentage(earnedPoints, maxPoints));
+	/**
+	 * Get the first element that contains the lookup string
+	 *
+	 * @param {String} tag The tag to search for
+	 * @param {String} lookupString The string to search for
+	 * @returns {Element} The first element that contains the lookup string
+	 */
+	const getElement = (tag, lookupString) => {
+		for (const element of document.querySelectorAll(tag))
+			if (element.textContent.includes(lookupString)) return element;
+	};
 
-	// Get the parent element only once to avoid querying the DOM multiple times
-	const gradeDiv = getElement('strong', 'Current Course Grade:').parentElement;
-	const absoluteGradeDiv = gradeDiv.cloneNode(true); // Clone for the absolute grade
+	// #endregion
 
-	// Use a single querySelector and template literals for cleaner code
-	absoluteGradeDiv.querySelector('strong').innerText = 'Absolute Course Grade:';
-	absoluteGradeDiv.querySelector('span').innerText = `${grade} (${getPointsToA(
-		earnedPoints,
-		maxPoints
-	)} points to A)`;
+	// #region Main
 
-	// Optimize updating innerHTML by doing it in one operation
-	const bottomDiv = absoluteGradeDiv.querySelector('div');
-	bottomDiv.innerHTML = bottomDiv.innerHTML
-		.replace(/\/\s[^<]+/, `/ ${maxPoints} `) // Update max points
-		.replace(' to Date', ''); // Remove "to Date" text
+	/**
+	 * Get the points from the lookup string
+	 *
+	 * @param {String} lookupString
+	 * @param {Boolean} child
+	 * @returns {Number} The points from the lookup string
+	 */
+	const getPoints = (lookupString, child) => {
+		const span = getElement('span', lookupString);
 
-	gradeDiv.after(absoluteGradeDiv);
-};
+		let spanText = child ? span.querySelector('span').innerText : span.nextElementSibling.innerText;
 
-const maxPoints = getPoints('Total Points Possible in Course:');
-let earnedPoints = getPoints('Points Earned to Date:', true);
+		return Number(spanText.includes('N/A') ? '0' : spanText);
+	};
 
-const percentage = getPercentage(earnedPoints, maxPoints);
-const grade = getLetterGrade(percentage);
+	// #endregion
 
-appendGrade(earnedPoints, maxPoints);
+	/**
+	 * Append the grade to the page
+	 *
+	 * @param {Number} earnedPoints
+	 * @param {Number} maxPoints
+	 */
+	const appendGrade = (earnedPoints, maxPoints) => {
+		const grade = getLetterGrade(getPercentage(earnedPoints, maxPoints));
+
+		// Get the parent element only once to avoid querying the DOM multiple times
+		const gradeDiv = getElement('strong', 'Current Course Grade:').parentElement;
+		const absoluteGradeDiv = gradeDiv.cloneNode(true); // Clone for the absolute grade
+
+		// Use a single querySelector and template literals for cleaner code
+		absoluteGradeDiv.querySelector('strong').innerText = 'Absolute Course Grade:';
+		absoluteGradeDiv.querySelector('span').innerText = `${grade} (${getPointsToA(
+			earnedPoints,
+			maxPoints
+		)} points to A)`;
+
+		// Optimize updating innerHTML by doing it in one operation
+		const bottomDiv = absoluteGradeDiv.querySelector('div');
+		bottomDiv.innerHTML = bottomDiv.innerHTML
+			.replace(/\/\s[^<]+/, `/ ${maxPoints} `) // Update max points
+			.replace(' to Date', ''); // Remove "to Date" text
+
+		gradeDiv.after(absoluteGradeDiv);
+	};
+
+	let earnedPoints = getPoints('Points Earned to Date:', true);
+	const maxPoints = getPoints('Total Points Possible in Course:');
+
+	const percentage = getPercentage(earnedPoints, maxPoints);
+	const grade = getLetterGrade(percentage);
+
+	appendGrade(earnedPoints, maxPoints);
+})();
