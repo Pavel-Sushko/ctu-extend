@@ -1,18 +1,18 @@
 // ==UserScript==
-// @name         CTU Extender
+// @name         CTU Grade Calculator
 // @namespace    http://tampermonkey.net/
-// @version      0.0.1
+// @version      0.0.2
 // @description  Calculate the current absolute grade and points needed to get an A in CTU courses
 // @author       Pavel Sushko <github@psushko.com>
 // @license      MIT
-// @match        https://studentlogin.coloradotech.edu/
+// @match        https://studentlogin.coloradotech.edu/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=coloradotech.edu
 // @grant        none
+// @downloadURL https://update.greasyfork.org/scripts/490426/CTU%20Grade%20Calculator.user.js
+// @updateURL https://update.greasyfork.org/scripts/490426/CTU%20Grade%20Calculator.meta.js
 // ==/UserScript==
 
-(function () {
-	'use strict';
-
+(async function () {
 	const gradeThresholds = [
 		{ grade: 'A', threshold: 94 },
 		{ grade: 'A-', threshold: 90 },
@@ -84,8 +84,14 @@
 	 * @param {Boolean} child
 	 * @returns {Number} The points from the lookup string
 	 */
-	const getPoints = (lookupString, child) => {
-		const span = getElement('span', lookupString);
+	const getPoints = async (lookupString, child) => {
+		let span = getElement('span', lookupString);
+
+		while (!span) {
+			await new Promise((r) => setTimeout(r, 100));
+
+			span = getElement('span', lookupString);
+		}
 
 		let spanText = child ? span.querySelector('span').innerText : span.nextElementSibling.innerText;
 
@@ -123,11 +129,8 @@
 		gradeDiv.after(absoluteGradeDiv);
 	};
 
-	let earnedPoints = getPoints('Points Earned to Date:', true);
-	const maxPoints = getPoints('Total Points Possible in Course:');
-
-	const percentage = getPercentage(earnedPoints, maxPoints);
-	const grade = getLetterGrade(percentage);
+	let earnedPoints = await getPoints('Points Earned to Date:', true);
+	let maxPoints = await getPoints('Total Points Possible in Course:');
 
 	appendGrade(earnedPoints, maxPoints);
 })();
