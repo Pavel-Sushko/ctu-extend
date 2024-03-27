@@ -1,5 +1,5 @@
 // ==UserScript==
-// @name         CTU Grade Calculator
+// @name         CTU Extender
 // @namespace    http://tampermonkey.net/
 // @version      0.0.3
 // @description  Calculate the current absolute grade and points needed to get an A in CTU courses
