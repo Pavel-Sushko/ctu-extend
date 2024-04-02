@@ -125,7 +125,7 @@
 					absoluteGradeDiv.querySelector('span').innerText = `${grade} (${getPointsToA(
 						earnedPoints,
 						maxPoints
-					)} points to A)`;
+					).toFixed(2)} points to A)`;
 
 					// Optimize updating innerHTML by doing it in one operation
 					const bottomDiv = absoluteGradeDiv.querySelector('div');
