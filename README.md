@@ -1,6 +1,6 @@
-# CTU Extended
+# CTU Extend
 
-The CTU Extended app aims to improve the user experience of the CTU student portal by adding new features and fixing existing issues. The app is designed to run as a Tampermonkey userscript, which means it can be installed and run on any modern web browser.
+The CTU Extend app aims to improve the user experience of the CTU student portal by adding new features and fixing existing issues. The app is designed to run as a Tampermonkey userscript, which means it can be installed and run on any modern web browser.
 
 ## Features
 
