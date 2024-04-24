@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         CTU Extender
-// @namespace    http://tampermonkey.net/
+// @namespace    https://psushko.com
 // @version      0.0.5
 // @description  Extends the functionality of the CTU website
 // @author       Pavel Sushko <github@psushko.com>
