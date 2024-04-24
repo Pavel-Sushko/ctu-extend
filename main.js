@@ -2,7 +2,7 @@
 // @name         CTU Extender
 // @namespace    http://tampermonkey.net/
 // @version      0.0.5
-// @description  Calculate the current absolute grade and points needed to get an A in CTU courses
+// @description  Extends the functionality of the CTU website
 // @author       Pavel Sushko <github@psushko.com>
 // @license      MIT
 // @match        https://studentlogin.coloradotech.edu/*
