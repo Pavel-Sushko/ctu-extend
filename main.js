@@ -211,6 +211,9 @@ const handlePages = async () => {
 
 // #endregion
 
+/**
+ * Entry point
+ */
 (async function () {
 	handlePages();
 })();
