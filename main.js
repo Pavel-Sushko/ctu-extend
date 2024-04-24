@@ -2,6 +2,8 @@
 // @name         CTU Extend
 // @namespace    https://psushko.com
 // @homepage     https://github.com/Pavel-Sushko/ctu-extend
+// @website      https://psushko.com
+// @source       https://github.com/Pavel-Sushko/ctu-extend
 // @version      0.0.5
 // @description  Extends the functionality of the CTU website
 // @author       Pavel Sushko <github@psushko.com>
