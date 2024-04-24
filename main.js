@@ -1,6 +1,7 @@
 // ==UserScript==
-// @name         CTU Extender
+// @name         CTU Extend
 // @namespace    https://psushko.com
+// @homepage     https://github.com/Pavel-Sushko/ctu-extend
 // @version      0.0.5
 // @description  Extends the functionality of the CTU website
 // @author       Pavel Sushko <github@psushko.com>
@@ -8,8 +9,8 @@
 // @match        https://studentlogin.coloradotech.edu/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=coloradotech.edu
 // @grant        GM_addElement
-// @downloadURL  https://update.greasyfork.org/scripts/490426/CTU%20Extender.user.js
-// @updateURL    https://update.greasyfork.org/scripts/490426/CTU%20Extender.meta.js
+// @downloadURL  https://update.greasyfork.org/scripts/490426/CTU%20Extend.user.js
+// @updateURL    https://update.greasyfork.org/scripts/490426/CTU%20Extend.meta.js
 // ==/UserScript==
 
 GM_addElement('script', {
