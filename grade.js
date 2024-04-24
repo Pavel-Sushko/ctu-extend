@@ -17,6 +17,11 @@ GM_addElement('script', {
 	type: 'text/javascript',
 });
 
+const PAGES = {
+	gradebook: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/class\/\d+\/gradebook$/i,
+	degreePlan: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/portal\/my-program\/degree-plan$/i,
+};
+
 // #region DOM Manipulation
 
 /**
@@ -33,11 +38,11 @@ const getElement = (tag, lookupString) => {
 
 // #endregion
 
-const PAGES = {
-	gradebook: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/class\/\d+\/gradebook$/i,
-	degreePlan: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/portal\/my-program\/degree-plan$/i,
-};
+// #region Page Handlers
 
+/**
+ * Handles the gradebook page
+ */
 const handleGradebook = async () => {
 	const gradeThresholds = [
 		{ grade: 'A', threshold: 94 },
@@ -144,6 +149,9 @@ const handleGradebook = async () => {
 	appendGrade(earnedPoints, maxPoints);
 };
 
+/**
+ * Handles the degree plan page
+ */
 const handleDegreePlan = async () => {
 	const SELECTORS = {
 		earnedCredit: '.credit-item-title',
@@ -173,7 +181,10 @@ const handleDegreePlan = async () => {
 	creditsSpan.innerHTML += ` (${result.toFixed(2)}%)`;
 };
 
-(async function () {
+/**
+ * Handles the pages
+ */
+const handlePages = async () => {
 	let prevPage = '';
 
 	while (true) {
@@ -193,4 +204,10 @@ const handleDegreePlan = async () => {
 
 		await new Promise((r) => setTimeout(r, 100));
 	}
+};
+
+// #endregion
+
+(async function () {
+	handlePages();
 })();
