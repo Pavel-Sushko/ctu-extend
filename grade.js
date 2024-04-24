@@ -8,8 +8,8 @@
 // @match        https://studentlogin.coloradotech.edu/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=coloradotech.edu
 // @grant        GM_addElement
-// @downloadURL  https://update.greasyfork.org/scripts/490426/CTU%20Grade%20Calculator.user.js
-// @updateURL    https://update.greasyfork.org/scripts/490426/CTU%20Grade%20Calculator.meta.js
+// @downloadURL  https://update.greasyfork.org/scripts/490426/CTU%20Extender.user.js
+// @updateURL    https://update.greasyfork.org/scripts/490426/CTU%20Extender.meta.js
 // ==/UserScript==
 
 GM_addElement('script', {
