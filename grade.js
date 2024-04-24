@@ -7,13 +7,35 @@
 // @license      MIT
 // @match        https://studentlogin.coloradotech.edu/*
 // @icon         https://www.google.com/s2/favicons?sz=64&domain=coloradotech.edu
-// @grant        none
+// @grant        GM_addElement
 // @downloadURL  https://update.greasyfork.org/scripts/490426/CTU%20Grade%20Calculator.user.js
 // @updateURL    https://update.greasyfork.org/scripts/490426/CTU%20Grade%20Calculator.meta.js
 // ==/UserScript==
 
+GM_addElement('script', {
+	src: 'https://cdnjs.cloudflare.com/ajax/libs/mathjs/12.4.1/math.js',
+	type: 'text/javascript',
+});
+
+// #region DOM Manipulation
+
+/**
+ * Get the first element that contains the lookup string
+ *
+ * @param {String} tag The tag to search for
+ * @param {String} lookupString The string to search for
+ * @returns {Element} The first element that contains the lookup string
+ */
+const getElement = (tag, lookupString) => {
+	for (const element of document.querySelectorAll(tag))
+		if (element.textContent.includes(lookupString)) return element;
+};
+
+// #endregion
+
 const PAGES = {
 	gradebook: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/class\/\d+\/gradebook$/i,
+	degreePlan: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/portal\/my-program\/degree-plan$/i,
 };
 
 const handleGradebook = async () => {
@@ -60,22 +82,6 @@ const handleGradebook = async () => {
 	 */
 	const getPointsToA = (earnedPoints, maxPoints) =>
 		Math.max(0, maxPoints * (gradeThresholds[0].threshold / 100) - earnedPoints);
-
-	// #endregion
-
-	// #region DOM Manipulation
-
-	/**
-	 * Get the first element that contains the lookup string
-	 *
-	 * @param {String} tag The tag to search for
-	 * @param {String} lookupString The string to search for
-	 * @returns {Element} The first element that contains the lookup string
-	 */
-	const getElement = (tag, lookupString) => {
-		for (const element of document.querySelectorAll(tag))
-			if (element.textContent.includes(lookupString)) return element;
-	};
 
 	// #endregion
 
@@ -138,6 +144,35 @@ const handleGradebook = async () => {
 	appendGrade(earnedPoints, maxPoints);
 };
 
+const handleDegreePlan = async () => {
+	const SELECTORS = {
+		earnedCredit: '.credit-item-title',
+		requiredCredit: '.credits-required',
+	};
+
+	let creditsEarnedElement = document.querySelector(SELECTORS.earnedCredit);
+	let creditsRequiredElement = document.querySelector(SELECTORS.requiredCredit);
+
+	while (!creditsEarnedElement || !creditsRequiredElement) {
+		await new Promise((r) => setTimeout(r, 100));
+
+		creditsEarnedElement = document.querySelector(SELECTORS.earnedCredit);
+		creditsRequiredElement = document.querySelector(SELECTORS.requiredCredit);
+	}
+
+	const result = math.evaluate(creditsEarnedElement.innerText + creditsRequiredElement.innerText) * 100;
+
+	let creditsSpan = getElement('span', 'Credits Earned');
+
+	while (!creditsSpan) {
+		await new Promise((r) => setTimeout(r, 100));
+
+		creditsSpan = getElement('span', 'Credits Earned');
+	}
+
+	creditsSpan.innerHTML += ` (${result.toFixed(2)}%)`;
+};
+
 (async function () {
 	let prevPage = '';
 
@@ -146,6 +181,9 @@ const handleGradebook = async () => {
 			switch (true) {
 				case PAGES.gradebook.test(window.location.href):
 					await handleGradebook();
+					break;
+				case PAGES.degreePlan.test(window.location.href):
+					await handleDegreePlan();
 					break;
 				default:
 					break;
