@@ -4,7 +4,7 @@
 // @homepage     https://github.com/Pavel-Sushko/ctu-extend
 // @website      https://psushko.com
 // @source       https://github.com/Pavel-Sushko/ctu-extend
-// @version      0.1.0
+// @version      0.2.0
 // @description  Extends the functionality of the CTU website
 // @author       Pavel Sushko <github@psushko.com>
 // @license      MIT
@@ -21,6 +21,7 @@ GM_addElement('script', {
 });
 
 const PAGES = {
+	home: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/home\/active\/all$/i,
 	gradebook: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/class\/\d+\/gradebook$/i,
 	degreePlan: /^https?:\/\/studentlogin\.coloradotech\.edu\/\?.+#\/portal\/my-program\/degree-plan$/i,
 };
@@ -102,6 +103,38 @@ const addTooltipStyles = () => {
 // #endregion
 
 // #region Page Handlers
+
+/**
+ * Handles the home page
+ */
+const handleHome = async () => {
+	addTooltipStyles();
+
+	const SELECTORS = {
+		earnedCredit: '.credit-item-title',
+		requiredCredit: '.credits-required',
+		donut: 'pec-donut-chart',
+	};
+
+	let creditsEarnedElement = document.querySelector(SELECTORS.earnedCredit);
+	let creditsRequiredElement = document.querySelector(SELECTORS.requiredCredit);
+	let donut = document.querySelector(SELECTORS.donut);
+
+	while (!creditsEarnedElement || !creditsRequiredElement || !donut) {
+		await new Promise((r) => setTimeout(r, 100));
+
+		creditsEarnedElement = document.querySelector(SELECTORS.earnedCredit);
+		creditsRequiredElement = document.querySelector(SELECTORS.requiredCredit);
+		donut = document.querySelector(SELECTORS.donut);
+	}
+
+	const result = math.evaluate(creditsEarnedElement.innerText + creditsRequiredElement.innerText) * 100;
+	const resultPercentage = `${result.toFixed(2)}%`;
+
+	createTooltip(donut, resultPercentage);
+
+	// TODO: Create honours tracking
+};
 
 /**
  * Handles the gradebook page
@@ -216,6 +249,8 @@ const handleGradebook = async () => {
  * Handles the degree plan page
  */
 const handleDegreePlan = async () => {
+	addTooltipStyles();
+
 	const SELECTORS = {
 		earnedCredit: '.credit-item-title',
 		requiredCredit: '.credits-required',
@@ -263,6 +298,9 @@ const handlePages = async () => {
 	while (true) {
 		if (prevPage !== window.location.href)
 			switch (true) {
+				case PAGES.home.test(window.location.href):
+					await handleHome();
+					break;
 				case PAGES.gradebook.test(window.location.href):
 					await handleGradebook();
 					break;
@@ -285,6 +323,5 @@ const handlePages = async () => {
  * Entry point
  */
 (async function () {
-	addTooltipStyles();
 	handlePages();
 })();
