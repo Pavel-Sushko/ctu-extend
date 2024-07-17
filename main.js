@@ -132,6 +132,8 @@ const handleHome = async () => {
 	const resultPercentage = `${result.toFixed(2)}%`;
 
 	createTooltip(donut, resultPercentage);
+
+	// TODO: Create honours tracking
 };
 
 /**
