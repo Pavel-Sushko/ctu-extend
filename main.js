@@ -4,7 +4,7 @@
 // @homepage     https://github.com/Pavel-Sushko/ctu-extend
 // @website      https://psushko.com
 // @source       https://github.com/Pavel-Sushko/ctu-extend
-// @version      0.0.5
+// @version      0.1.0
 // @description  Extends the functionality of the CTU website
 // @author       Pavel Sushko <github@psushko.com>
 // @license      MIT
@@ -37,6 +37,66 @@ const PAGES = {
 const getElement = (tag, lookupString) => {
 	for (const element of document.querySelectorAll(tag))
 		if (element.textContent.includes(lookupString)) return element;
+};
+
+// Function to create a tooltip
+const createTooltip = (element, tooltipText) => {
+	const tooltip = document.createElement('span');
+	tooltip.className = 'tooltip-text';
+	tooltip.innerText = tooltipText;
+
+	element.style.position = 'relative';
+	element.appendChild(tooltip);
+
+	element.onmouseover = () => {
+		tooltip.style.visibility = 'visible';
+		tooltip.style.opacity = '1';
+	};
+
+	element.onmouseout = () => {
+		tooltip.style.visibility = 'hidden';
+		tooltip.style.opacity = '0';
+	};
+};
+
+// Add CSS for tooltip
+const addTooltipStyles = () => {
+	const style = document.createElement('style');
+	style.innerHTML = `
+		.tooltip-text {
+			visibility: hidden;
+			width: 120px;
+			background-color: black;
+			color: #fff;
+			text-align: center;
+			border-radius: 6px;
+			padding: 5px 0;
+			position: absolute;
+			z-index: 1;
+			bottom: 110%; /* Position the tooltip above the text */
+			left: 50%;
+			margin-left: -60px;
+			opacity: 0;
+			transition: opacity 0.3s;
+		}
+
+		.tooltip-text::after {
+			content: '';
+			position: absolute;
+			top: 100%; /* At the bottom of the tooltip */
+			left: 50%;
+			margin-left: -5px;
+			border-width: 5px;
+			border-style: solid;
+			border-color: black transparent transparent transparent;
+		}
+
+		.tooltip:hover .tooltip-text {
+			visibility: visible;
+			opacity: 1;
+		}
+	`;
+	document.head.appendChild(style);
 };
 
 // #endregion
@@ -159,10 +219,12 @@ const handleDegreePlan = async () => {
 	const SELECTORS = {
 		earnedCredit: '.credit-item-title',
 		requiredCredit: '.credits-required',
+		donut: 'div.hide-on-mobile pec-donut-chart',
 	};
 
 	let creditsEarnedElement = document.querySelector(SELECTORS.earnedCredit);
 	let creditsRequiredElement = document.querySelector(SELECTORS.requiredCredit);
+	let donut = document.querySelector(SELECTORS.donut);
 
 	while (!creditsEarnedElement || !creditsRequiredElement) {
 		await new Promise((r) => setTimeout(r, 100));
@@ -172,6 +234,7 @@ const handleDegreePlan = async () => {
 	}
 
 	const result = math.evaluate(creditsEarnedElement.innerText + creditsRequiredElement.innerText) * 100;
+	const resultPercentage = `${result.toFixed(2)}%`;
 
 	let creditsSpan = getElement('span', 'Credits Earned');
 
@@ -181,7 +244,14 @@ const handleDegreePlan = async () => {
 		creditsSpan = getElement('span', 'Credits Earned');
 	}
 
-	creditsSpan.innerHTML += ` (${result.toFixed(2)}%)`;
+	while (!donut) {
+		await new Promise((r) => setTimeout(r, 100));
+
+		donut = document.querySelector(SELECTORS.donut);
+	}
+
+	creditsSpan.innerHTML += ` (${resultPercentage})`;
+	createTooltip(donut, resultPercentage);
 };
 
 /**
@@ -215,5 +285,6 @@ const handlePages = async () => {
  * Entry point
  */
 (async function () {
+	addTooltipStyles();
 	handlePages();
 })();
