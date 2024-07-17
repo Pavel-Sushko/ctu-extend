@@ -7,6 +7,7 @@ The CTU Extend app aims to improve the user experience of the CTU student portal
 The CTU Extended app includes the following features:
 
 - **Deeper Grade Insights**: View detailed grade information for each subject, including the current absolute grade and percentage, as well as the number of points needed to achieve an A.
+- **Degree Progress Tracker**: Keep track of your progress towards your degree by viewing the percentage of credits you have completed.
 
 ## Installation
 
