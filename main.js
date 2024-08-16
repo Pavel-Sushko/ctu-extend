@@ -4,7 +4,7 @@
 // @homepage     https://github.com/Pavel-Sushko/ctu-extend
 // @website      https://psushko.com
 // @source       https://github.com/Pavel-Sushko/ctu-extend
-// @version      0.1.0
+// @version      0.2.0
 // @description  Extends the functionality of the CTU website
 // @author       Pavel Sushko <github@psushko.com>
 // @license      MIT
@@ -99,6 +99,13 @@ const addTooltipStyles = () => {
 	document.head.appendChild(style);
 };
 
+const createID = (string) =>
+	string
+		.toLowerCase()
+		.replace(/[^a-z0-9\s-]/g, '')
+		.replace(/\s/g, '-')
+		.replace(/-+/g, '-');
+
 // #endregion
 
 // #region Page Handlers
@@ -120,6 +127,8 @@ const handleGradebook = async () => {
 		{ grade: 'D', threshold: 60 },
 		{ grade: 'F', threshold: 0 },
 	];
+
+	let addedPoints = 0;
 
 	// #region Grade Calculations
 
@@ -178,6 +187,9 @@ const handleGradebook = async () => {
 
 	// #endregion
 
+	let earnedPoints = await getPoints('Points Earned to Date:', true);
+	let maxPoints = await getPoints('Total Points Possible in Course:');
+
 	/**
 	 * Append the grade to the page
 	 *
@@ -206,10 +218,60 @@ const handleGradebook = async () => {
 		gradeDiv.after(absoluteGradeDiv);
 	};
 
-	let earnedPoints = await getPoints('Points Earned to Date:', true);
-	let maxPoints = await getPoints('Total Points Possible in Course:');
+	const updateGrade = (addedPoints, earnedPoints, maxPoints) => {
+		const grade = getLetterGrade(getPercentage(earnedPoints + addedPoints, maxPoints));
+
+		console.log(grade);
+
+		const absoluteGradeDiv = getElement('strong', 'Absolute Course Grade:').parentElement;
+
+		absoluteGradeDiv.querySelector('span').innerText = `${grade} (${getPointsToA(
+			earnedPoints + addedPoints,
+			maxPoints
+		).toFixed(2)} points to A)`;
+	};
+
+	const addCheckbox = (row) => {
+		const td = document.createElement('td');
+
+		const checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.id = createID(row.firstElementChild.innerText);
+		checkbox.checked = false;
+
+		checkbox.onclick = () => {
+			let assignmentEarnedPoints = Number(row.children[3].innerText.replace(/[^0-9.]/g, ''));
+			let possiblePoints = Number(row.children[4].innerText.replace(/[^0-9.]/g, ''));
+
+			if (assignmentEarnedPoints !== 0) possiblePoints -= assignmentEarnedPoints;
+
+			if (checkbox.checked) addedPoints += possiblePoints;
+			else addedPoints -= possiblePoints;
+
+			console.log(addedPoints);
+
+			// Update the grade
+			updateGrade(addedPoints, earnedPoints, maxPoints);
+		};
+
+		td.appendChild(checkbox);
+		row.prepend(td);
+	};
+
+	const addColumn = (table, header) => {
+		const th = document.createElement('th');
+		th.innerText = header;
+
+		table.querySelector('thead tr').prepend(th);
+
+		for (const row of table.querySelectorAll('tbody tr')) {
+			addCheckbox(row);
+		}
+	};
 
 	appendGrade(earnedPoints, maxPoints);
+
+	addColumn(document.querySelector('table'), 'Add to Grade');
 };
 
 /**
