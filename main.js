@@ -100,6 +100,13 @@ const addTooltipStyles = () => {
 	document.head.appendChild(style);
 };
 
+const createId = (string) =>
+	string
+		.toLowerCase()
+		.replace(/[^a-z0-9\s-]/g, '')
+		.replace(/\s/g, '-')
+		.replace(/-+/g, '-');
+
 // #endregion
 
 // #region Page Handlers
@@ -154,6 +161,8 @@ const handleGradebook = async () => {
 		{ grade: 'F', threshold: 0 },
 	];
 
+	let addedPoints = 0;
+
 	// #region Grade Calculations
 
 	/**
@@ -200,7 +209,6 @@ const handleGradebook = async () => {
 
 		while (!span) {
 			await new Promise((r) => setTimeout(r, 100));
-
 			span = getElement('span', lookupString);
 		}
 
@@ -209,7 +217,9 @@ const handleGradebook = async () => {
 		return Number(spanText.includes('N/A') ? '0' : spanText);
 	};
 
-	// #endregion
+	// Define earnedPoints and maxPoints first
+	let earnedPoints = await getPoints('Points Earned to Date:', true);
+	let maxPoints = await getPoints('Total Points Possible in Course:');
 
 	/**
 	 * Append the grade to the page
@@ -217,33 +227,95 @@ const handleGradebook = async () => {
 	 * @param {Number} earnedPoints
 	 * @param {Number} maxPoints
 	 */
-	const appendGrade = (earnedPoints, maxPoints) => {
-		const grade = getLetterGrade(getPercentage(earnedPoints, maxPoints));
-
-		// Get the parent element only once to avoid querying the DOM multiple times
+	const appendGrade = () => {
 		const gradeDiv = getElement('strong', 'Current Course Grade:').parentElement;
-		const absoluteGradeDiv = gradeDiv.cloneNode(true); // Clone for the absolute grade
+		const absoluteGradeDiv = gradeDiv.cloneNode(true);
 
-		// Use a single querySelector and template literals for cleaner code
+		const percentage = getPercentage(earnedPoints, maxPoints);
+		const grade = getLetterGrade(percentage);
+
 		absoluteGradeDiv.querySelector('strong').innerText = 'Absolute Course Grade:';
 		absoluteGradeDiv.querySelector('span').innerText = `${grade} (${getPointsToA(earnedPoints, maxPoints).toFixed(
 			2
 		)} points to A)`;
 
-		// Optimize updating innerHTML by doing it in one operation
 		const bottomDiv = absoluteGradeDiv.querySelector('div');
-		bottomDiv.innerHTML = bottomDiv.innerHTML
-			.replace(/\/\s[^<]+/, `/ ${maxPoints} `) // Update max points
-			.replace(' to Date', ''); // Remove "to Date" text
+		bottomDiv.innerHTML = bottomDiv.innerHTML.replace(/\/\s[^<]+/, `/ ${maxPoints} `).replace(' to Date', '');
 
 		gradeDiv.after(absoluteGradeDiv);
 	};
 
-	let earnedPoints = await getPoints('Points Earned to Date:', true);
-	let maxPoints = await getPoints('Total Points Possible in Course:');
+	/**
+	 * Update the grade display when points are added/removed
+	 *
+	 * @param {Number} addedPoints
+	 * @param {Number} earnedPoints
+	 * @param {Number} maxPoints
+	 */
+	const updateGrade = (addedPoints) => {
+		const updatedPercentage = getPercentage(earnedPoints + addedPoints, maxPoints);
+		const updatedGrade = getLetterGrade(updatedPercentage);
 
-	appendGrade(earnedPoints, maxPoints);
+		const absoluteGradeDiv = getElement('strong', 'Absolute Course Grade:').parentElement;
+		absoluteGradeDiv.querySelector('span').innerText = `${updatedGrade} (${getPointsToA(
+			earnedPoints + addedPoints,
+			maxPoints
+		).toFixed(2)} points to A)`;
+	};
+
+	/**
+	 * Add a checkbox to each row to allow adding/removing points to the grade
+	 *
+	 * @param {HTMLElement} row
+	 */
+	const addCheckbox = (row) => {
+		const td = document.createElement('td');
+
+		const checkbox = document.createElement('input');
+		checkbox.type = 'checkbox';
+		checkbox.id = createId(row.firstElementChild.innerText);
+		checkbox.checked = false;
+
+		checkbox.onclick = () => {
+			let assignmentEarnedPoints = Number(row.children[3].innerText.replace(/[^0-9.]/g, ''));
+			let possiblePoints = Number(row.children[4].innerText.replace(/[^0-9.]/g, ''));
+
+			if (assignmentEarnedPoints !== 0) possiblePoints -= assignmentEarnedPoints;
+
+			addedPoints += checkbox.checked ? possiblePoints : -possiblePoints;
+
+			// Update the grade
+			updateGrade(addedPoints);
+		};
+
+		td.appendChild(checkbox);
+		row.prepend(td);
+	};
+
+	/**
+	 * Add a new column to the grade table for checkboxes
+	 *
+	 * @param {HTMLElement} table
+	 * @param {String} header
+	 */
+	const addColumn = (table, header) => {
+		const th = document.createElement('th');
+		th.innerText = header;
+
+		table.querySelector('thead tr').prepend(th);
+
+		for (const row of table.querySelectorAll('tbody tr')) {
+			addCheckbox(row);
+		}
+	};
+
+	appendGrade();
+	addColumn(document.querySelector('table'), 'Add to Grade');
 };
+
+// #endregion
+
+// #endregion
 
 /**
  * Handles the degree plan page
@@ -296,7 +368,7 @@ const handlePages = async () => {
 	let prevPage = '';
 
 	while (true) {
-		if (prevPage !== window.location.href)
+		if (prevPage !== window.location.href) {
 			switch (true) {
 				case PAGES.home.test(window.location.href):
 					await handleHome();
@@ -310,10 +382,11 @@ const handlePages = async () => {
 				default:
 					break;
 			}
+		}
 
 		prevPage = window.location.href;
 
-		await new Promise((r) => setTimeout(r, 100));
+		await new Promise((r) => setTimeout(r, 300));
 	}
 };
 
