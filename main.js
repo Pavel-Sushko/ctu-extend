@@ -99,7 +99,7 @@ const addTooltipStyles = () => {
 	document.head.appendChild(style);
 };
 
-const createID = (string) =>
+const createId = (string) =>
 	string
 		.toLowerCase()
 		.replace(/[^a-z0-9\s-]/g, '')
@@ -176,7 +176,6 @@ const handleGradebook = async () => {
 
 		while (!span) {
 			await new Promise((r) => setTimeout(r, 100));
-
 			span = getElement('span', lookupString);
 		}
 
@@ -185,8 +184,7 @@ const handleGradebook = async () => {
 		return Number(spanText.includes('N/A') ? '0' : spanText);
 	};
 
-	// #endregion
-
+	// Define earnedPoints and maxPoints first
 	let earnedPoints = await getPoints('Points Earned to Date:', true);
 	let maxPoints = await getPoints('Total Points Possible in Course:');
 
@@ -196,47 +194,53 @@ const handleGradebook = async () => {
 	 * @param {Number} earnedPoints
 	 * @param {Number} maxPoints
 	 */
-	const appendGrade = (earnedPoints, maxPoints) => {
-		const grade = getLetterGrade(getPercentage(earnedPoints, maxPoints));
-
-		// Get the parent element only once to avoid querying the DOM multiple times
+	const appendGrade = () => {
 		const gradeDiv = getElement('strong', 'Current Course Grade:').parentElement;
-		const absoluteGradeDiv = gradeDiv.cloneNode(true); // Clone for the absolute grade
+		const absoluteGradeDiv = gradeDiv.cloneNode(true);
 
-		// Use a single querySelector and template literals for cleaner code
+		const percentage = getPercentage(earnedPoints, maxPoints);
+		const grade = getLetterGrade(percentage);
+
 		absoluteGradeDiv.querySelector('strong').innerText = 'Absolute Course Grade:';
 		absoluteGradeDiv.querySelector('span').innerText = `${grade} (${getPointsToA(earnedPoints, maxPoints).toFixed(
 			2
 		)} points to A)`;
 
-		// Optimize updating innerHTML by doing it in one operation
 		const bottomDiv = absoluteGradeDiv.querySelector('div');
-		bottomDiv.innerHTML = bottomDiv.innerHTML
-			.replace(/\/\s[^<]+/, `/ ${maxPoints} `) // Update max points
-			.replace(' to Date', ''); // Remove "to Date" text
+		bottomDiv.innerHTML = bottomDiv.innerHTML.replace(/\/\s[^<]+/, `/ ${maxPoints} `).replace(' to Date', '');
 
 		gradeDiv.after(absoluteGradeDiv);
 	};
 
-	const updateGrade = (addedPoints, earnedPoints, maxPoints) => {
-		const grade = getLetterGrade(getPercentage(earnedPoints + addedPoints, maxPoints));
-
-		console.log(grade);
+	/**
+	 * Update the grade display when points are added/removed
+	 *
+	 * @param {Number} addedPoints
+	 * @param {Number} earnedPoints
+	 * @param {Number} maxPoints
+	 */
+	const updateGrade = (addedPoints) => {
+		const updatedPercentage = getPercentage(earnedPoints + addedPoints, maxPoints);
+		const updatedGrade = getLetterGrade(updatedPercentage);
 
 		const absoluteGradeDiv = getElement('strong', 'Absolute Course Grade:').parentElement;
-
-		absoluteGradeDiv.querySelector('span').innerText = `${grade} (${getPointsToA(
+		absoluteGradeDiv.querySelector('span').innerText = `${updatedGrade} (${getPointsToA(
 			earnedPoints + addedPoints,
 			maxPoints
 		).toFixed(2)} points to A)`;
 	};
 
+	/**
+	 * Add a checkbox to each row to allow adding/removing points to the grade
+	 *
+	 * @param {HTMLElement} row
+	 */
 	const addCheckbox = (row) => {
 		const td = document.createElement('td');
 
 		const checkbox = document.createElement('input');
 		checkbox.type = 'checkbox';
-		checkbox.id = createID(row.firstElementChild.innerText);
+		checkbox.id = createId(row.firstElementChild.innerText);
 		checkbox.checked = false;
 
 		checkbox.onclick = () => {
@@ -245,19 +249,22 @@ const handleGradebook = async () => {
 
 			if (assignmentEarnedPoints !== 0) possiblePoints -= assignmentEarnedPoints;
 
-			if (checkbox.checked) addedPoints += possiblePoints;
-			else addedPoints -= possiblePoints;
-
-			console.log(addedPoints);
+			addedPoints += checkbox.checked ? possiblePoints : -possiblePoints;
 
 			// Update the grade
-			updateGrade(addedPoints, earnedPoints, maxPoints);
+			updateGrade(addedPoints);
 		};
 
 		td.appendChild(checkbox);
 		row.prepend(td);
 	};
 
+	/**
+	 * Add a new column to the grade table for checkboxes
+	 *
+	 * @param {HTMLElement} table
+	 * @param {String} header
+	 */
 	const addColumn = (table, header) => {
 		const th = document.createElement('th');
 		th.innerText = header;
@@ -269,10 +276,13 @@ const handleGradebook = async () => {
 		}
 	};
 
-	appendGrade(earnedPoints, maxPoints);
-
+	appendGrade();
 	addColumn(document.querySelector('table'), 'Add to Grade');
 };
+
+// #endregion
+
+// #endregion
 
 /**
  * Handles the degree plan page
@@ -323,7 +333,7 @@ const handlePages = async () => {
 	let prevPage = '';
 
 	while (true) {
-		if (prevPage !== window.location.href)
+		if (prevPage !== window.location.href) {
 			switch (true) {
 				case PAGES.gradebook.test(window.location.href):
 					await handleGradebook();
@@ -334,10 +344,11 @@ const handlePages = async () => {
 				default:
 					break;
 			}
+		}
 
 		prevPage = window.location.href;
 
-		await new Promise((r) => setTimeout(r, 100));
+		await new Promise((r) => setTimeout(r, 300));
 	}
 };
 
