@@ -362,6 +362,21 @@ const handleDegreePlan = async () => {
 };
 
 /**
+ * Handles the live chats page
+ */
+const handleLiveChats = async () => {
+	let liveChats = document.querySelectorAll('pec-meeting-time-section');
+
+	for (const chat of liveChats) {
+		let titleRaw = chat.querySelector('.title').innerText;
+		let dateRaw = chat.querySelector('.meeting-duration').innerText;
+		let link = chat.querySelector('a').href;
+
+		console.log(`Title: ${titleRaw}, Date: ${dateRaw}, Link: ${link}`);
+	}
+};
+
+/**
  * Handles the pages
  */
 const handlePages = async () => {
